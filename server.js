@@ -7,30 +7,39 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname  = path.dirname(__filename);
 
 const app  = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8080;
 
-// CORS for  static site
-const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || "https://kind-sea-003aaf510.2.azurestaticapps.net";
-app.use(cors({ origin: ALLOWED_ORIGIN }));
+/* ---- CORS demo route WITHOUT CORS (registered BEFORE global cors) ---- */
+app.get("/api/nocors", (req, res) => {
+  res.json({ ok: true, note: "No CORS headers here on purpose." });
+});
 
-// Serve the tester page from /public at the site root
+/* ---- Enable CORS for everyone (lab requires public access) ---- */
+app.use(cors());  // Access-Control-Allow-Origin: *
+
+/* ---- Static tester page (no Dice UI here) ---- */
 app.use(express.static(path.join(__dirname, "public")));
-app.get("/", (_req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
+app.get("/", (_req, res) =>
+  res.sendFile(path.join(__dirname, "public", "index.html"))
+);
+
+/* ---- REST APIs ---- */
+const randInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+
+app.get("/api/ping", (_req, res) =>
+  res.json({ ok: true, time: Date.now() })
+);
+
+app.get("/api/random", (req, res) => {
+  const min = Number(req.query.min ?? 1);
+  const max = Number(req.query.max ?? 20);
+  if (!Number.isFinite(min) || !Number.isFinite(max) || min > max) {
+    return res.status(400).json({ error: "Bad min/max" });
+  }
+  res.json({ n: randInt(min, max), min, max });
 });
 
-// Minimal APIs
-const rand = (a,b)=>Math.floor(Math.random()*(b-a+1))+a;
-app.get("/api/ping", (_req,res)=>res.json({ ok:true, time:Date.now() }));
-app.get("/api/random", (req,res)=>{
-  const min=+req.query.min||1, max=+req.query.max||20;
-  if (min>max) return res.status(400).json({error:"Bad min/max"});
-  res.json({ n: rand(min,max), min, max });
-});
-// no CORS on purpose
-app.get("/api/nocors", (req,res)=>{
-  res.setHeader("Content-Type","application/json");
-  res.end(JSON.stringify({ ok:true, note:"no CORS headers here" }));
-});
+app.get("/api/d20", (_req, res) => res.json({ n: randInt(1, 20) }));
 
-app.listen(PORT, "0.0.0.0", ()=>console.log(`Listening on ${PORT}`));
+/* ---- Start server (must use process.env.PORT on Azure) ---- */
+app.listen(PORT, "0.0.0.0", () => console.log(`Listening on ${PORT}`));
