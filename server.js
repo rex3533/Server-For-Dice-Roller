@@ -1,49 +1,36 @@
 import express from "express";
 import cors from "cors";
+import path from "path";
+import { fileURLToPath } from "url";
 
-const app = express();
-const PORT = process.env.PORT || 8080;
+const __filename = fileURLToPath(import.meta.url);
+const __dirname  = path.dirname(__filename);
 
-/**
- * Allow only your static site origin in CORS.
- * Example: https://<your-static>.azurestaticapps.net
- * You can comma-separate multiple origins if needed.
- */
-const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || "";
-const corsOk = ALLOWED_ORIGIN
-  ? cors({ origin: ALLOWED_ORIGIN.split(",").map(s => s.trim()) })
-  : cors(); // fallback: allow all (fine for local dev)
+const app  = express();
+const PORT = process.env.PORT || 3000;
 
-/** Helpers */
-const randInt = (min, max) =>
-  Math.floor(Math.random() * (max - min + 1)) + min;
+// CORS for  static site
+const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || "https://kind-sea-003aaf510.2.azurestaticapps.net";
+app.use(cors({ origin: ALLOWED_ORIGIN }));
 
-/** Static tester page (no UI for dice roller here) */
-app.use(express.static("public"));
-
-/** --- CORS-enabled APIs --- */
-app.get("/api/ping", corsOk, (req, res) => {
-  res.json({ ok: true, message: "pong", time: Date.now() });
+// Serve the tester page from /public at the site root
+app.use(express.static(path.join(__dirname, "public")));
+app.get("/", (_req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-app.get("/api/random", corsOk, (req, res) => {
-  const min = Number(req.query.min ?? 1);
-  const max = Number(req.query.max ?? 20);
-  if (!Number.isFinite(min) || !Number.isFinite(max) || min > max) {
-    return res.status(400).json({ error: "Bad min/max" });
-  }
-  res.json({ n: randInt(min, max), min, max });
+// Minimal APIs
+const rand = (a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+app.get("/api/ping", (_req,res)=>res.json({ ok:true, time:Date.now() }));
+app.get("/api/random", (req,res)=>{
+  const min=+req.query.min||1, max=+req.query.max||20;
+  if (min>max) return res.status(400).json({error:"Bad min/max"});
+  res.json({ n: rand(min,max), min, max });
+});
+// no CORS on purpose
+app.get("/api/nocors", (req,res)=>{
+  res.setHeader("Content-Type","application/json");
+  res.end(JSON.stringify({ ok:true, note:"no CORS headers here" }));
 });
 
-app.get("/api/d20", corsOk, (req, res) => {
-  res.json({ n: randInt(1, 20) });
-});
-
-/** --- Intentionally NO CORS headers (CORS failure demo) --- */
-app.get("/api/nocors", (req, res) => {
-  res.json({ ok: true, note: "This route omits CORS headers on purpose." });
-});
-
-app.listen(PORT, () => {
-  console.log(`Dice API listening on :${PORT}`);
-});
+app.listen(PORT, "0.0.0.0", ()=>console.log(`Listening on ${PORT}`));
