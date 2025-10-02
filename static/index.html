@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Dice API Tester</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  body{font-family:system-ui,Segoe UI,Roboto,Arial;margin:2rem}
+  button{padding:.6rem 1rem;margin:.25rem .5rem 1rem 0}
+  pre{background:#111;color:#eee;padding:1rem;border-radius:.5rem}
+</style>
+<h1>Dice API Tester</h1>
+<p>These call your server on Azure.</p>
+<div>
+  <button onclick="hit('/api/ping')">/api/ping</button>
+  <button onclick="hit('/api/random?min=1&max=20')">/api/random</button>
+  <button onclick="hit('/api/d20')">/api/d20</button>
+  <button onclick="hit('/api/nocors')">/api/nocors (will CORS-fail from another origin)</button>
+</div>
+<pre id="out">Output…</pre>
+<script>
+async function hit(p){
+  try {
+    const r = await fetch(p);
+    const j = await r.json();
+    out.textContent = JSON.stringify(j,null,2);
+  } catch(e) {
+    out.textContent = String(e);
+  }
+}
+</script>
