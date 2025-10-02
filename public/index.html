@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Dice API Tester</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    body{font-family:system-ui,Arial;margin:2rem;line-height:1.4}
+    button{padding:.6rem 1rem;margin:.25rem .5rem 1rem 0}
+    pre{background:#111;color:#eee;padding:1rem;border-radius:.5rem;overflow:auto}
+  </style>
+</head>
+<body>
+  <h1>Dice API Tester</h1>
+  <p>Use these buttons to verify the REST endpoints.</p>
+
+  <div>
+    <button id="ping">Ping</button>
+    <button id="random">Random 1–20</button>
+    <button id="d20">D20</button>
+    <button id="nocors">No-CORS (should fail from a different origin)</button>
+  </div>
+
+  <pre id="out">Output will appear here…</pre>
+
+  <script>
+    const out = document.getElementById('out');
+    const show = (v) => out.textContent = typeof v === 'string' ? v : JSON.stringify(v, null, 2);
+
+    document.getElementById('ping').onclick = async () => {
+      const r = await fetch('/api/ping'); show(await r.json());
+    };
+    document.getElementById('random').onclick = async () => {
+      const r = await fetch('/api/random?min=1&max=20'); show(await r.json());
+    };
+    document.getElementById('d20').onclick = async () => {
+      const r = await fetch('/api/d20'); show(await r.json());
+    };
+    document.getElementById('nocors').onclick = async () => {
+      try {
+        const r = await fetch('/api/nocors'); show(await r.json());
+      } catch (e) {
+        show(String(e));
+      }
+    };
+  </script>
+</body>
+</html>
